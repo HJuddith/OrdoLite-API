@@ -1,28 +1,30 @@
 .
+├─ docs/
 ├─ src/
-│  ├─ app.ts
-│  ├─ server.ts
+│  ├─ app.js
+│  ├─ server.js
+|  ├─ security.js
 │  ├─ config/
-│  │  └─ database.ts
+│  │  └─ database.js
 │  ├─ models/
-│  │  ├─ user.model.ts
-│  │  ├─ ordonnance.model.ts
-│  │  ├─ medicament.model.ts
-│  │  ├─ ligneMedicament.model.ts
-│  │  └─ pieceJointe.model.ts
+│  │  ├─ user.model.js
+│  │  ├─ ordonnance.model.js
+│  │  ├─ medicament.model.js
+│  │  ├─ ligneMedicament.model.js
+│  │  └─ pieceJointe.model.js
 │  ├─ routes/
-│  │  ├─ auth.routes.ts
-│  │  └─ ordonnances.routes.ts
+│  │  ├─ auth.routes.js
+│  │  └─ ordonnances.routes.js
 │  ├─ controllers/
-│  │  ├─ auth.controller.ts
-│  │  └─ ordonnances.controller.ts
+│  │  ├─ auth.controller.js
+│  │  └─ ordonnances.controller.js
 │  ├─ middleware/
-│  │  └─ auth.middleware.ts
+│  │  └─ auth.middleware.js
 │  ├─ validation/
-│  │  └─ ligneMedicament.schema.ts
-│  └─ db.ts
+│  │  └─ ligneMedicament.schema.js
+│  └─ db.js
 ├─ tests/
-│  └─ ordonnances.spec.ts
+│  └─ ordonnances.spec.js
 ├─ docker-compose.yml
 ├─ .env
 ├─ .gitignore

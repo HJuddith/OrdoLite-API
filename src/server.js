@@ -1,0 +1,14 @@
+import http from 'http';
+import app from './app.js';
+import { initSocket } from './socket/index.js';
+
+const server = http.createServer(app);
+
+// Initialisation Socket.IO
+initSocket(server);
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Serveur en ligne sur http://localhost:${PORT}`);
+});
+
