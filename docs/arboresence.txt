@@ -1,0 +1,31 @@
+.
+├─ src/
+│  ├─ app.ts
+│  ├─ server.ts
+│  ├─ config/
+│  │  └─ database.ts
+│  ├─ models/
+│  │  ├─ user.model.ts
+│  │  ├─ ordonnance.model.ts
+│  │  ├─ medicament.model.ts
+│  │  ├─ ligneMedicament.model.ts
+│  │  └─ pieceJointe.model.ts
+│  ├─ routes/
+│  │  ├─ auth.routes.ts
+│  │  └─ ordonnances.routes.ts
+│  ├─ controllers/
+│  │  ├─ auth.controller.ts
+│  │  └─ ordonnances.controller.ts
+│  ├─ middleware/
+│  │  └─ auth.middleware.ts
+│  ├─ validation/
+│  │  └─ ligneMedicament.schema.ts
+│  └─ db.ts
+├─ tests/
+│  └─ ordonnances.spec.ts
+├─ docker-compose.yml
+├─ .env
+├─ .gitignore
+├─ package.json
+└─ README.md
+├─ tsconfig.json
