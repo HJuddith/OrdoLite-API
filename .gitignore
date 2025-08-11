@@ -15,6 +15,7 @@ coverage
 # Docker
 docker/db-backups
 *.dump
+backups/
 
 # Logs
 logs

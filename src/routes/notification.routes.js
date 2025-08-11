@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authRequired } from '../middlewares/auth.js';
+import { validate } from '../middlewares/validate.js';
 import { NotificationController } from '../controllers/notification.controller.js';
+import { idSchema } from '../schemas/common.js';
+import { notificationMarkReadSchema } from '../schemas/notification.schema.js';
 
 const router = Router();
 
@@ -8,14 +11,15 @@ router.use(authRequired);
 
 /**
  * @openapi
- * /notifications:
+ * /api/v1/notifications:
  *   get:
  *     tags: [Notifications]
- *     summary: Liste des notifications de l'utilisateur connecté
- *     security: [ { bearerAuth: [] } ]
+ *     summary: List all notifications for the authenticated user
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste des notifications
+ *         description: A list of notifications
  *         content:
  *           application/json:
  *             schema:
@@ -27,38 +31,53 @@ router.get('/', NotificationController.listMine);
 
 /**
  * @openapi
- * /notifications/{id}/read:
+ * /api/v1/notifications/{id}/read:
  *   patch:
  *     tags: [Notifications]
- *     summary: Marquer une notification comme lue
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Mark a notification as read
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the notification to mark as read.
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/NotificationMarkReadRequest'
  *     responses:
  *       200:
- *         description: Notification mise à jour
+ *         description: Notification successfully updated
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Notification'
  *       404:
- *         description: Not found
+ *         description: Notification not found
  */
-router.patch('/:id/read', NotificationController.markRead);
+router.patch(
+  '/:id/read',
+  validate(idSchema, 'params'),
+  validate(notificationMarkReadSchema, 'body'),
+  NotificationController.markRead
+);
 
 /**
  * @openapi
- * /notifications:
+ * /api/v1/notifications:
  *   delete:
  *     tags: [Notifications]
- *     summary: Supprimer toutes les notifications de l'utilisateur connecté
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Delete all notifications for the authenticated user
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       204:
- *         description: Notifications supprimées
+ *         description: Notifications successfully deleted
  */
 router.delete('/', NotificationController.clearAll);
 

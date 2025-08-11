@@ -2,145 +2,163 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
 import { authRequired } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
-import { registerSchema, loginSchema, resetPasswordConfirmSchema, resetPasswordRequestSchema } from '../schemas/index.js';
+import {
+  registerSchema,
+  loginSchema,
+  resetPasswordConfirmSchema,
+  resetPasswordRequestSchema
+} from '../schemas/index.js';
 
 const router = Router();
 
-
 /**
  * @openapi
- * /auth/register:
+ * /api/v1/auth/register:
  *   post:
  *     tags: [Auth]
- *     summary: Inscrire un nouvel utilisateur
+ *     summary: Register a new user
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/RegisterRequest' }
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *           example:
+ *             first_name: John
+ *             last_name: Doe
+ *             email: user@example.com
+ *             password: MySecurePassword123!
  *     responses:
  *       201:
- *         description: Utilisateur créé
+ *         description: User successfully created
  *       409:
- *         description: Email déjà utilisé
+ *         description: Email already in use
  */
 router.post('/register', validate({ body: registerSchema }), AuthController.register);
 
 /**
  * @openapi
- * /auth/login:
+ * /api/v1/auth/login:
  *   post:
  *     tags: [Auth]
- *     summary: Se connecter avec un email et un mot de passe
+ *     summary: Log in with email and password
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/LoginRequest' }
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *           example:
+ *             email: user@example.com
+ *             password: MySecurePassword123!
  *     responses:
  *       200:
- *         description: Jetons d'authentification
+ *         description: Authentication tokens
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/LoginResponse' }
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
  *       401:
- *         description: Identifiants invalides
+ *         description: Invalid credentials
  */
-router.post('/login',validate({ body: loginSchema }), AuthController.login);
+router.post('/login', validate({ body: loginSchema }), AuthController.login);
 
 /**
  * @openapi
- * /auth/refresh:
+ * /api/v1/auth/refresh:
  *   post:
  *     tags: [Auth]
- *     summary: Obtenir un nouveau jeton d'accès à partir d'un refresh token
+ *     summary: Get a new access token using a refresh token
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema: { $ref: '#/components/schemas/RefreshRequest' }
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshRequest'
+ *           example:
+ *             refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *     responses:
  *       200:
- *         description: Nouveau jeton d'accès
+ *         description: New access token
  *       401:
- *         description: Refresh token invalide
+ *         description: Invalid refresh token
  */
 router.post('/refresh', AuthController.refresh);
 
 /**
  * @openapi
- * /auth/me:
+ * /api/v1/auth/me:
  *   get:
  *     tags: [Auth]
- *     summary: Récupérer les informations de l'utilisateur connecté
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Retrieve information about the authenticated user
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Données de l'utilisateur actuel
+ *         description: Current user data
  *       401:
- *         description: Non autorisé
+ *         description: Unauthorized
  */
 router.get('/me', authRequired, AuthController.me);
 
 /**
  * @openapi
- * /auth/logout:
+ * /api/v1/auth/logout:
  *   post:
  *     tags: [Auth]
- *     summary: Déconnecter l'utilisateur actuel
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Log out the current user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           example:
+ *             refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *     responses:
  *       204:
- *         description: Déconnexion réussie
+ *         description: Successfully logged out
  *       401:
- *         description: Non autorisé
+ *         description: Unauthorized
  */
 router.post('/logout', authRequired, AuthController.logout);
 
 /**
  * @openapi
- * /auth/forgot-password:
+ * /api/v1/auth/forgot-password:
  *   post:
  *     tags: [Auth]
- *     summary: Demander un lien de réinitialisation de mot de passe
+ *     summary: Request a password reset link
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 example: user@example.com
+ *           example:
+ *             email: user@example.com
  *     responses:
  *       200:
- *         description: Lien de réinitialisation envoyé (même si l'email n'existe pas)
+ *         description: Password reset link sent (even if email does not exist)
  */
-router.post('/forgot-password',validate({ body: resetPasswordRequestSchema }), AuthController.requestReset);
+router.post('/forgot-password', validate({ body: resetPasswordRequestSchema }), AuthController.requestReset);
 
 /**
  * @openapi
- * /auth/reset-password:
+ * /api/v1/auth/reset-password:
  *   post:
  *     tags: [Auth]
- *     summary: Réinitialiser le mot de passe avec le token fourni
+ *     summary: Reset the password using the provided token
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               token:
- *                 type: string
- *               newPassword:
- *                 type: string
+ *           example:
+ *             token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *             new_password: NewSecurePassword456!
  *     responses:
  *       200:
- *         description: Mot de passe réinitialisé avec succès
+ *         description: Password successfully reset
  *       400:
- *         description: Token invalide ou expiré
+ *         description: Invalid or expired token
  */
 router.post('/reset-password', validate({ body: resetPasswordConfirmSchema }), AuthController.resetPassword);
 

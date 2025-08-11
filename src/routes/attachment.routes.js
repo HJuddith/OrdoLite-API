@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authRequired } from '../middlewares/auth.js';
+import { validate } from '../middlewares/validate.js';
 import { AttachmentController } from '../controllers/attachment.controller.js';
+import { idSchema } from '../schemas/common.js';
+import { attachmentCreateSchema } from '../schemas/attachment.schema.js';
 
 const router = Router();
 
@@ -8,19 +11,22 @@ router.use(authRequired);
 
 /**
  * @openapi
- * /prescriptions/{id}/attachments:
+ * /api/v1/prescriptions/{id}/attachments:
  *   get:
  *     tags: [Attachments]
- *     summary: Liste les pièces jointes d'une prescription
+ *     summary: List all attachments for a prescription
+ *     description: Retrieve all attached files (images, PDFs, etc.) for a specific prescription by its ID.
  *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the prescription.
  *     responses:
  *       200:
- *         description: Liste des pièces jointes
+ *         description: A list of attachments for the prescription.
  *         content:
  *           application/json:
  *             schema:
@@ -28,20 +34,23 @@ router.use(authRequired);
  *               items:
  *                 $ref: '#/components/schemas/Attachment'
  */
-router.get('/:id/attachments', AttachmentController.list);
+router.get('/:id/attachments', validate(idSchema, 'params'), AttachmentController.list);
 
 /**
  * @openapi
- * /prescriptions/{id}/attachments:
+ * /api/v1/prescriptions/{id}/attachments:
  *   post:
  *     tags: [Attachments]
- *     summary: Upload d'une pièce jointe (image/pdf)
+ *     summary: Upload a new attachment (image or PDF)
+ *     description: Upload a new file attachment to the specified prescription.
  *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the prescription.
  *     requestBody:
  *       required: true
  *       content:
@@ -52,56 +61,80 @@ router.get('/:id/attachments', AttachmentController.list);
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: The file to upload (image or PDF).
+ *               mime_type:
+ *                 type: string
+ *               file_size_bytes:
+ *                 type: integer
+ *               file_path:
+ *                 type: string
+ *               sha256:
+ *                 type: string
+ *                 pattern: '^[0-9A-Fa-f]{64}$'
+ *               prescription_id:
+ *                 type: integer
  *     responses:
  *       201:
- *         description: Pièce jointe créée
+ *         description: The attachment was successfully created.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Attachment'
  *       400:
- *         description: Fichier manquant ou invalide
+ *         description: Missing or invalid file.
  */
-router.post('/:id/attachments', AttachmentController.uploadOne, AttachmentController.create);
+router.post(
+  '/:id/attachments',
+  validate(idSchema, 'params'),
+  validate(attachmentCreateSchema, 'body'),
+  AttachmentController.uploadOne,
+  AttachmentController.create
+);
 
 /**
  * @openapi
- * /prescriptions/attachments/{pieceId}:
+ * /api/v1/prescriptions/attachments/{pieceId}:
  *   get:
  *     tags: [Attachments]
- *     summary: Télécharger ou streamer une pièce jointe
+ *     summary: Download or stream an attachment
+ *     description: Retrieve a file stream for the given attachment ID.
  *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: path
  *         name: pieceId
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the attachment.
  *     responses:
  *       200:
- *         description: Flux du fichier
+ *         description: File stream of the attachment.
  *       404:
- *         description: Pièce jointe introuvable
+ *         description: Attachment not found.
  */
-router.get('/attachments/:pieceId', AttachmentController.stream);
+router.get('/attachments/:pieceId', validate(idSchema, 'params'), AttachmentController.stream);
 
 /**
  * @openapi
- * /prescriptions/attachments/{pieceId}:
+ * /api/v1/prescriptions/attachments/{pieceId}:
  *   delete:
  *     tags: [Attachments]
- *     summary: Supprimer une pièce jointe
+ *     summary: Delete an attachment
+ *     description: Permanently delete an attachment by its ID.
  *     security: [ { bearerAuth: [] } ]
  *     parameters:
  *       - in: path
  *         name: pieceId
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the attachment.
  *     responses:
  *       204:
- *         description: Pièce jointe supprimée
+ *         description: Attachment successfully deleted.
  *       404:
- *         description: Pièce jointe introuvable
+ *         description: Attachment not found.
  */
-router.delete('/attachments/:pieceId', AttachmentController.remove);
+router.delete('/attachments/:pieceId', validate(idSchema, 'params'), AttachmentController.remove);
 
 export default router;

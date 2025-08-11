@@ -7,11 +7,14 @@
 │  ├─ config/
 │  │  └─ database.js
 │  ├─ models/
-│  │  ├─ user.model.js
-│  │  ├─ ordonnance.model.js
-│  │  ├─ medicament.model.js
-│  │  ├─ ligneMedicament.model.js
-│  │  └─ pieceJointe.model.js
+│  │  ├─ User.model.js
+│  │  ├─ Prescription.model.js
+│  │  ├─ Medication.model.js
+│  │  ├─ LinePrescription.model.js
+│  │  └─ Attachement.model.js
+│  │  └─ ResetPassword.model.js
+│  │  └─ RefreshToken.model.js
+│  │  └─ Notification.model.js
 │  ├─ routes/
 │  │  ├─ auth.routes.js
 │  │  └─ ordonnances.routes.js

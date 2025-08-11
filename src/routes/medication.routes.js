@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authRequired } from '../middlewares/auth.js';
+import { validate } from '../middlewares/validate.js';
 import { MedicationController } from '../controllers/medication.controller.js';
+import { medicationCreateSchema, medicationUpdateSchema } from '../schemas/medication.schema.js';
+import { idSchema } from '../schemas/common.js';
 
 const router = Router();
 
@@ -8,14 +11,15 @@ router.use(authRequired);
 
 /**
  * @openapi
- * /medications:
+ * /api/v1/medications:
  *   get:
  *     tags: [Medications]
- *     summary: Liste tous les médicaments de l'utilisateur connecté
- *     security: [ { bearerAuth: [] } ]
+ *     summary: List all medications for the authenticated user
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste des médicaments
+ *         description: A list of medications
  *         content:
  *           application/json:
  *             schema:
@@ -27,11 +31,12 @@ router.get('/', MedicationController.list);
 
 /**
  * @openapi
- * /medications:
+ * /api/v1/medications:
  *   post:
  *     tags: [Medications]
- *     summary: Créer un nouveau médicament
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Create a new medication
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -40,28 +45,31 @@ router.get('/', MedicationController.list);
  *             $ref: '#/components/schemas/MedicationCreateRequest'
  *     responses:
  *       201:
- *         description: Médicament créé
+ *         description: Medication successfully created
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Medication'
  *       400:
- *         description: Données invalides
+ *         description: Invalid request data
  */
-router.post('/', MedicationController.create);
+router.post('/', validate(medicationCreateSchema, 'body'), MedicationController.create);
 
 /**
  * @openapi
- * /medications/{id}:
+ * /api/v1/medications/{id}:
  *   put:
  *     tags: [Medications]
- *     summary: Mettre à jour un médicament existant
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Update an existing medication
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the medication to update.
  *     requestBody:
  *       required: true
  *       content:
@@ -70,34 +78,37 @@ router.post('/', MedicationController.create);
  *             $ref: '#/components/schemas/MedicationUpdateRequest'
  *     responses:
  *       200:
- *         description: Médicament mis à jour
+ *         description: Medication successfully updated
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Medication'
  *       404:
- *         description: Médicament introuvable
+ *         description: Medication not found
  */
-router.put('/:id', MedicationController.update);
+router.put('/:id', validate(idSchema, 'params'), validate(medicationUpdateSchema, 'body'), MedicationController.update);
 
 /**
  * @openapi
- * /medications/{id}:
+ * /api/v1/medications/{id}:
  *   delete:
  *     tags: [Medications]
- *     summary: Supprimer un médicament
- *     security: [ { bearerAuth: [] } ]
+ *     summary: Delete a medication
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: The ID of the medication to delete.
  *     responses:
  *       204:
- *         description: Médicament supprimé
+ *         description: Medication successfully deleted
  *       404:
- *         description: Médicament introuvable
+ *         description: Medication not found
  */
-router.delete('/:id', MedicationController.remove);
+router.delete('/:id', validate(idSchema, 'params'), MedicationController.remove);
 
 export default router;

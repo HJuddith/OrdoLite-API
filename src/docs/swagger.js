@@ -15,8 +15,33 @@ const swaggerDefinition = {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
     },
     schemas: {
-   
-      User: {
+      RegisterRequest: {
+        type: 'object',
+        required: ['first_name', 'last_name', 'email', 'password'],
+        properties: {
+          first_name: { type: 'string', example: 'John' },
+          last_name: { type: 'string', example: 'Doe' },
+          email: { type: 'string', format: 'email', example: 'user@example.com' },
+          password: { type: 'string', format: 'password', example: 'MySecurePassword123' },
+        },
+      }, PrescriptionCreateRequest: {
+      type: 'object',
+      required: ['title', 'prescriber'],
+      properties: {
+        title: { type: 'string', example: 'Ibuprofène 400mg' },
+        prescriber: { type: 'string', example: 'Dr. Bernard' },
+        notes: { type: 'string', example: '1 comprimé après les repas' }
+      }
+    },
+    PrescriptionUpdateRequest: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: 'Ibuprofène 200mg' },
+        prescriber: { type: 'string', example: 'Dr. Bernard' },
+        notes: { type: 'string', example: 'Réduire la dose à 200mg' }
+      }
+    },
+        User: {
         type: 'object',
         properties: {
           user_id: { type: 'integer' },
@@ -94,7 +119,6 @@ const swaggerDefinition = {
           created_at: { type: 'string', format: 'date-time' },
         },
       },
-      // DTOs d’auth
       LoginRequest: {
         type: 'object',
         required: ['email','password'],
@@ -109,16 +133,6 @@ const swaggerDefinition = {
         properties: {
           access_token: { type: 'string' },
           refresh_token: { type: 'string' },
-        },
-      },
-      RegisterRequest: {
-        type: 'object',
-        required: ['first_name','last_name','email','password'],
-        properties: {
-          first_name: { type: 'string' },
-          last_name: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          password: { type: 'string', format: 'password' },
         },
       },
       RefreshRequest: {
@@ -137,14 +151,38 @@ const swaggerDefinition = {
     { name: 'Attachments', description: 'Pièces jointes' },
     { name: 'Notifications', description: 'Notifications utilisateur' },
   ],
+  paths: {
+    '/auth/register': {
+      post: {
+        summary: 'Register a new user',
+        tags: ['Auth'],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RegisterRequest' },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'User registered successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/User' },
+              },
+            },
+          },
+          400: { description: 'Invalid input' },
+        },
+      },
+    },
+  },
 };
 
-export const swaggerOptions = {
+const options = {
   swaggerDefinition,
-  // on parcourt les fichiers de routes pour récupérer les JSDoc @openapi
-  apis: [
-    './src/routes/*.js',
-  ],
+  apis: [], // Si tu veux aussi parser des JSDoc dans ton code
 };
 
-export const swaggerSpec = swaggerJSDoc(swaggerOptions);
+export default swaggerJSDoc(options);
