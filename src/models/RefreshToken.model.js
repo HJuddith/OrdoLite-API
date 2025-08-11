@@ -10,6 +10,11 @@ export default (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      token: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,

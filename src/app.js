@@ -1,51 +1,46 @@
 import express from 'express';
 import pino from 'pino';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJSDoc from 'swagger-jsdoc';
-import { applySecurityMiddlewares } from './security.js';
+import dotenv from 'dotenv';
+import { sequelize } from './models/sequelize.js';
+import { initModels } from './models/index.js';
+import apiRouter from './routes/index.js';
+import { applySecurityMiddlewares } from './security.js'; 
 
-// ENV
-const { NODE_ENV = 'development' } = process.env;
-const logger = pino({ level: NODE_ENV === 'production' ? 'info' : 'debug' });
+dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
 const app = express();
 
-// Sécurité & parsing
+const logger = pino({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug'
+});
+
 applySecurityMiddlewares(app);
 
-// Swagger config
-const swaggerSpec = swaggerJSDoc({
-  definition: {
-    openapi: '3.0.3',
-    info: {
-      title: 'OrdoLite API',
-      version: '1.0.0',
-      description: 'API REST de gestion d’ordonnances médicales.',
-    },
-    servers: [{ url: 'http://localhost:3000' }],
-  },
-  apis: ['src/routes/**/*.js'],
+initModels(sequelize);
+
+app.use(express.json());
+app.use('/api/v1', apiRouter);
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Middleware 404 - Not Found
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.originalUrl} introuvable`
+  });
 });
 
-// Routes basiques
-app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
-app.get('/version', (req, res) => res.json({ name: 'OrdoLite API', version: '1.0.0', env: NODE_ENV }));
-
-// Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Import routes
-
-
-// 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found' });
-});
-
-// Error handler
+// Middleware global de gestion des erreurs
 app.use((err, req, res, next) => {
-  logger.error({ err }, 'unhandled_error');
-  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+  console.error('Unhandled error:', err);
+
+  res.status(err.status || 500).json({
+    error: err.name || 'InternalServerError',
+    message: err.message || 'Une erreur interne est survenue'
+  });
 });
+
+export { app, logger };
 
 export default app;

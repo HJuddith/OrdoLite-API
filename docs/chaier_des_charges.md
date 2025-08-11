@@ -12,6 +12,7 @@ Elle offre la possibilité de :
 - **Téléverser la photo ou le scan d’une ordonnance** (images/PDF) et l’associer à l’ordonnance
 - Consulter facilement la liste des médicaments en cours
 - Recevoir des rappels
+- Gestion des utilisateurs et des données par un accès administrateur dans une version améliorée.
 
 ## 2. Objectifs
 

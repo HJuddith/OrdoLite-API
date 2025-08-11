@@ -4,31 +4,20 @@
   "description": "OrdoLite – API de gestion d'ordonnances",
   "type": "module",
   "main": "src/server.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
-    "test": "cross-env DOTENV_CONFIG_PATH=.env.test jest --runInBand --detectOpenHandles",
-    "test:watch": "cross-env DOTENV_CONFIG_PATH=.env.test jest --watch",
+    "sync:dev": "NODE_ENV=development node src/sync.js",
+    "sync:test": "NODE_ENV=test node src/sync.js",
+    "test": "npm run sync:test && NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand --detectOpenHandles",
     "dev": "nodemon",
-    "start": "node src/server.js",
-    "db:init": "sequelize-cli init",
-    "db:migrate": "sequelize-cli db:migrate",
-    "db:migrate:undo": "sequelize-cli db:migrate:undo",
-    "db:seed": "sequelize-cli db:seed:all",
-    "db:seed:undo": "sequelize-cli db:seed:undo:all"
+    "start": "node src/server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/HJuddith/OrdoLite-API.git"
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ]
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/HJuddith/OrdoLite-API/issues"
-  },
-  "homepage": "https://github.com/HJuddith/OrdoLite-API#readme",
   "dependencies": {
     "argon2": "^0.43.1",
     "cors": "^2.8.5",
@@ -37,9 +26,12 @@
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "pino": "^9.8.0",
+    "pino-http": "^10.5.0",
     "sanitize-html": "^2.17.0",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
@@ -57,7 +49,6 @@
     "cross-env": "^10.0.0",
     "jest": "^30.0.5",
     "nodemon": "^3.1.10",
-    "sequelize-cli": "^6.6.3",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "ts-node-dev": "^2.0.0",

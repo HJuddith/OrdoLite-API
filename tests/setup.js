@@ -1,8 +1,21 @@
-import { execSync } from "node:child_process";
-import "dotenv/config";
+import { jest } from '@jest/globals';
 
-export default async () => {
-  process.env.NODE_ENV = "test";
-  // Applique les migrations sur la DB de test
-  execSync(`npx sequelize-cli db:migrate --env development`, { stdio: "inherit" });
-};
+jest.mock('nodemailer', () => ({
+  createTransport: () => ({
+    sendMail: jest.fn().mockResolvedValue(true)
+  })
+}));
+
+import request from 'supertest';
+import app from '../src/app.js';
+import { sequelize } from '../src/models/sequelize.js';
+
+export const api = request(app);
+
+beforeAll(async () => {
+  await sequelize.sync({ force: true });
+});
+
+afterAll(async () => {
+  await sequelize.close();
+});

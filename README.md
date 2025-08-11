@@ -88,6 +88,8 @@ npm test              # Lancer les tests Jest
 
 ## Structure du projet ':'
 
+```plaintext
+
 ├─ docs/               # Documentation technique
 ├─ src/                # Code source
 │  ├─ app.js           # App Express
@@ -103,6 +105,8 @@ npm test              # Lancer les tests Jest
 ├─ tests/              # Tests Jest/Supertest
 ├─ docker-compose.yml  # Stack Docker
 └─ README.md
+
+```
 
 ## Migrations & Seeds
 
