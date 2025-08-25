@@ -1,0 +1,26 @@
+name: CI/CD Demo
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm test --if-present
+      - name: Build (si nécessaire)
+        run: npm run build --if-present
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "OrdoLite-API"
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
+      - name: Set app settings (DATABASE_URL)
+        run: |
+          echo "Rien à faire ici: la variable est un secret côté Actions.
+          Pense aussi à définir DATABASE_URL côté Azure si ton app la lit à l’exécution."
