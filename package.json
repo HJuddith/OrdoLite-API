@@ -8,8 +8,7 @@
     "sync:dev": "NODE_ENV=development node src/sync.js",
     "sync:test": "NODE_ENV=test node src/sync.js",
     "test": "npm run sync:test && NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand --detectOpenHandles",
-    "dev": "nodemon",
-    "start": "node src/server.js"
+    "dev": "nodemon src/server.js"
   },
   "jest": {
     "testEnvironment": "node",

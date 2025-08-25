@@ -20,13 +20,16 @@ API REST de gestion d'ordonnances médicales.
   - [Prérequis](#prérequis)
   - [Installation](#installation)
   - [Configuration](#configuration)
-  - [Commandes ':'](#commandes-)
+  - [Commandes :](#commandes-)
+    - [Démarrage en développement (nodemon)](#démarrage-en-développement-nodemon)
+    - [Démarrage en production](#démarrage-en-production)
+    - [Lancer les tests Jest](#lancer-les-tests-jest)
   - [Structure du projet ':'](#structure-du-projet-)
   - [Migrations \& Seeds](#migrations--seeds)
-    - [Générer une migration](#générer-une-migration)
-    - [Appliquer les migrations](#appliquer-les-migrations)
-    - [Annuler la dernière migration](#annuler-la-dernière-migration)
-    - [Lancer les seeds](#lancer-les-seeds)
+  - [Réinitialiser la base en développement](#réinitialiser-la-base-en-développement)
+  - [Réinitialiser la base en test](#réinitialiser-la-base-en-test)
+    - [Lancer les tests](#lancer-les-tests)
+  - [Lancer le serveur en développement](#lancer-le-serveur-en-développement)
   - [API Docs](#api-docs)
 
 ---
@@ -78,13 +81,21 @@ DB_NAME=ordolite_dev
 JWT_ACCESS_SECRET=...
 JWT_REFRESH_SECRET=...
 
-## Commandes ':'
+## Commandes :
 
-npm run dev           # Démarrage en développement (nodemon)
-npm start             # Démarrage en production
-npm run db:migrate    # Appliquer les migrations
-npm run db:seed       # Insérer des données de test
-npm test              # Lancer les tests Jest
+### Démarrage en développement (nodemon)
+
+```bash
+npm run dev 
+```
+
+### Démarrage en production
+
+npm run prod
+
+### Lancer les tests Jest
+
+npm test
 
 ## Structure du projet ':'
 
@@ -103,28 +114,42 @@ npm test              # Lancer les tests Jest
 │  ├─ validation/      # Schémas Zod
 │  └─ db.js            # Connexion BD
 ├─ tests/              # Tests Jest/Supertest
-├─ docker-compose.yml  # Stack Docker
+├─ docker/             # Stack Docker
 └─ README.md
 
 ```
 
 ## Migrations & Seeds
 
-### Générer une migration
+## Réinitialiser la base en développement  
 
-npx sequelize-cli migration:generate --name nom-migration
+(drop + recreate + seed de démo)
 
-### Appliquer les migrations
+```bash
+npm run sync:dev
+```
 
-npm run db:migrate
+## Réinitialiser la base en test
 
-### Annuler la dernière migration
+(drop + recreate + seed de démo)
 
-npm run db:migrate:undo
+```bash
+npm run sync:test
+```
 
-### Lancer les seeds
+### Lancer les tests
 
-npm run db:seed
+(réinitialise la base en test puis exécute Jest)
+
+```bash
+npm test
+```
+
+## Lancer le serveur en développement
+
+```bash
+npm run dev
+```
 
 ## API Docs
 

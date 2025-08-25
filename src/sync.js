@@ -1,29 +1,43 @@
-import 'dotenv/config';
+import "dotenv/config";
 import argon2 from "argon2";
-import { sequelize } from './models/sequelize.js';
-import { initModels } from './models/index.js';
-import demoData from '../seeders/demo.data.js';
+import {
+  sequelize,
+  User,
+  Medication,
+  Prescription,
+  PrescriptionLine,
+  Attachment,
+  Notification,
+  RefreshToken,
+  ResetPassword,
+} from "../src/models/index.js";
+import { demoData } from "../seeders/demo.data.js"; // ou `import demoData from ...` si export default
 
 async function main() {
-  // 1. Init models
-  const models = initModels(sequelize);
+  // On regroupe les modèles pour les passer au seeder
+  const models = {
+    User,
+    Medication,
+    Prescription,
+    PrescriptionLine,
+    Attachment,
+    Notification,
+    RefreshToken,
+    ResetPassword,
+  };
 
-  // 2. Création des tables
-  await sequelize.sync({ force: true }); // force: true = drop + recreate
+  try {
+    await sequelize.sync({ force: true }); // ⚠️ drop + recreate
+    console.log("Tables créées avec succès");
 
-  console.log('Tables créées avec succès');
-
-  // 3. Insertion des données fictives
-
-
-  await demoData(models);
-
-  console.log('Données de démo insérées avec succès');
-
-  process.exit(0);
+    await demoData(models); // le seeder reçoit les modèles
+    console.log("Données de démo insérées avec succès");
+  } finally {
+    await sequelize.close();
+  }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

@@ -1,0 +1,111 @@
+name: CI & Backups
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  schedule:
+    # Backup chaque nuit à 03:00 Europe/Paris (~01:00 UTC en été, 02:00 UTC en hiver)
+    - cron: "0 1 * * *"
+
+jobs:
+  # =========================
+  # CI : tests automatiques
+  # =========================
+  test:
+    runs-on: ubuntu-latest
+    name: Test (Node 22 + Postgres)
+
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app_test
+        options: >-
+          --health-cmd="pg_isready -U postgres -d app_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      NODE_ENV: test
+      CI: true
+      # URL interne vers le service Postgres pour la suite de tests
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/app_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres -d app_test && break
+            echo "Waiting for Postgres…"; sleep 2
+          done
+
+      - name: Sync DB (drop + recreate + seed)
+        run: npm run sync:test
+
+      - name: Run tests
+        run: npm test
+
+  # =========================
+  # Backup planifié (DB + uploads)
+  # =========================
+  backup:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    name: Nightly Backup
+
+    env:
+      TZ: Europe/Paris
+      # Secrets à définir dans: Settings > Secrets and variables > Actions
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}     # ex: postgresql://user:pass@host:5432/dbname
+      # Optionnel: archive aussi le dossier uploads depuis une URL (ex: serveur/VPS)
+      # UPLOADS_DOWNLOAD_URL: ${{ secrets.UPLOADS_DOWNLOAD_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pg_dump client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Dump PostgreSQL (custom format)
+        run: |
+          TS="$(date +%Y%m%d-%H%M%S)"
+          pg_dump --dbname="$DATABASE_URL" -Fc -f "backups/db-$TS.dump"
+
+      # (Optionnel) si tu peux récupérer les uploads via HTTP/SSH/S3, ajoute une étape ici.
+      # - name: Download uploads archive
+      #   if: env.UPLOADS_DOWNLOAD_URL != ''
+      #   run: |
+      #     TS="$(date +%Y%m%d-%H%M%S)"
+      #     curl -fsSL "$UPLOADS_DOWNLOAD_URL" -o "backups/uploads-$TS.tgz"
+
+      - name: Upload backup artifacts (kept 14 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordolite-backup-${{ github.run_id }}
+          path: backups/*
+          retention-days: 14
