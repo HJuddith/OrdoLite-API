@@ -9,8 +9,10 @@ coverage
 
 # Environnements
 .env
-.env.local
-.env.*.local
+.env.developpement
+.env.production
+.env.docker
+.env.test
 
 # Docker
 docker/db-backups
