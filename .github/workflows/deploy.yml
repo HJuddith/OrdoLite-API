@@ -13,11 +13,13 @@ on:
 
 jobs:
 
+  # =============================
   # CI : Tests automatiques
-
+  # =============================
   ci:
     name: Run Tests & Lint
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
@@ -39,8 +41,7 @@ jobs:
       DATABASE_URL: postgres://jud:admin@localhost:5432/ordolite
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,55 +52,48 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Wait for Postgres to be ready
+      - name: Wait for Postgres
         run: |
           for i in {1..30}; do
             pg_isready -h localhost -p 5432 -U jud -d ordolite && break
             echo "Waiting for Postgres…"; sleep 2
           done
 
-      - name: Sync DB (drop + recreate + seed)
+      - name: Sync DB
         run: npm run sync:test
 
       - name: Run tests
         run: npm test
 
-  # CD : Déploiement sur VM via SSH
-
-  cd:
-    name: Deploy to VM
+  # =============================
+  # CD : Déploiement sur Render
+  # =============================
+  cd_deploy:
+    name: Deploy to Render
     runs-on: ubuntu-latest
     needs: ci
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.1
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          port: 22
-          script: |
-            cd ~/OrdoLite-API
-            git pull origin main
-            docker compose down
-            docker compose up -d --build
-
-  # Backup planifié (DB + uploads)
-  backup:
+  # =============================
+  # Backup : PostgreSQL (Neon)
+  # =============================
+  nightly_backup:
     if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
     name: Nightly Backup
+    runs-on: ubuntu-latest
 
     env:
       TZ: Europe/Paris
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install pg_dump client
         run: |
@@ -109,17 +103,10 @@ jobs:
       - name: Create backup directory
         run: mkdir -p backups
 
-      - name: Dump PostgreSQL (custom format)
+      - name: Dump Neon PostgreSQL
         run: |
           TS="$(date +%Y%m%d-%H%M%S)"
           pg_dump --dbname="$DATABASE_URL" -Fc -f "backups/db-$TS.dump"
-
-      # Optionnel : récupérer uploads depuis une URL/SSH/S3
-      # - name: Download uploads archive
-      #   if: env.UPLOADS_DOWNLOAD_URL != ''
-      #   run: |
-      #     TS="$(date +%Y%m%d-%H%M%S)"
-      #     curl -fsSL "$UPLOADS_DOWNLOAD_URL" -o "backups/uploads-$TS.tgz"
 
       - name: Upload backup artifacts (14 jours)
         uses: actions/upload-artifact@v4
