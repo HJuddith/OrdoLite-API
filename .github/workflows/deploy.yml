@@ -1,32 +1,70 @@
-name: CI/CD OrdoLite-API
+name: CI/CD & Backups OrdoLite-API
 
 on:
   push:
     branches:
-      - main  # Déploiement automatique uniquement sur main
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Backup chaque nuit à 03:00 Europe/Paris (~01:00 UTC en été)
+    - cron: "0 1 * * *"
 
 jobs:
+
+  # CI : Tests automatiques
+
   ci:
     name: Run Tests & Lint
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: jud
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: ordolite_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jud -d ordolite_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      CI: true
+      DATABASE_URL: postgres://jud:admin@localhost:5432/ordolite
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22.x'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Lint
-        run: npm run lint --if-present
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U jud -d ordolite_test && break
+            echo "Waiting for Postgres…"; sleep 2
+          done
 
-      - name: Run Tests
+      - name: Sync DB (drop + recreate + seed)
+        run: npm run sync:test
+
+      - name: Run tests
         run: npm test
+
+  # CD : Déploiement sur VM via SSH
 
   cd:
     name: Deploy to VM
@@ -47,11 +85,47 @@ jobs:
           script: |
             cd ~/OrdoLite-API
             git pull origin main
-            # Option 1 : déploiement via Docker
             docker compose down
             docker compose up -d --build
             docker image prune -f
-            # Option 2 : déploiement sans Docker, avec sync:dev
-            # npm install
-            # npm run sync:dev
-            # pm2 restart ordolite || pm2 start npm --name "ordolite" -- start
+
+  # Backup planifié (DB + uploads)
+  backup:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    name: Nightly Backup
+
+    env:
+      TZ: Europe/Paris
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pg_dump client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Dump PostgreSQL (custom format)
+        run: |
+          TS="$(date +%Y%m%d-%H%M%S)"
+          pg_dump --dbname="$DATABASE_URL" -Fc -f "backups/db-$TS.dump"
+
+      # Optionnel : récupérer uploads depuis une URL/SSH/S3
+      # - name: Download uploads archive
+      #   if: env.UPLOADS_DOWNLOAD_URL != ''
+      #   run: |
+      #     TS="$(date +%Y%m%d-%H%M%S)"
+      #     curl -fsSL "$UPLOADS_DOWNLOAD_URL" -o "backups/uploads-$TS.tgz"
+
+      - name: Upload backup artifacts (14 jours)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordolite-backup-${{ github.run_id }}
+          path: backups/*
+          retention-days: 14
