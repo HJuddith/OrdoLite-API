@@ -50,4 +50,5 @@ jobs:
             git pull origin main
             docker compose down
             docker compose up -d --build
+            docker compose exec -T api npm run sync:dev
             docker image prune -f
