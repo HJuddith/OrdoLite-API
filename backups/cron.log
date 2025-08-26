@@ -1,0 +1,29 @@
+[INFO] Sauvegarde démarrée à 2025-08-12_03-00-01
+[INFO] Aucun dossier ./uploads trouvé, skip.
+[INFO] Sauvegarde terminée avec succès.
+[INFO] Fichiers :
+-rw-rw-r-- 1 student student 20K août  12 03:00 ./backups/db_2025-08-12_03-00-01.sql
+[INFO] Sauvegarde démarrée à 2025-08-19_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-20_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-21_03-00-02
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-22_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-23_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-24_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[INFO] Sauvegarde démarrée à 2025-08-25_03-00-01
+[ERREUR] Le conteneur 'ordolite_db' n'est pas démarré.
+[2025-08-26 03:00:01] ➡️  Backup démarré (DB=ordolite, container=ordolite_db)
+[2025-08-26 03:00:01] ➡️  Backup démarré (DB=ordolite, container=ordolite_db)
+[2025-08-26 03:00:01] ➡️  Dump PostgreSQL → /home/student/Desktop/TP-DP/Projet-perso-cp5/OrdoLite-API/backups/db_2025-08-26_03-00-01.dump
+[2025-08-26 03:00:01] ➡️  Dump PostgreSQL → /home/student/Desktop/TP-DP/Projet-perso-cp5/OrdoLite-API/backups/db_2025-08-26_03-00-01.dump
+[2025-08-26 03:00:02] ℹ️  Dossier local ./uploads absent ou vide — tentative via volume Docker: ordolite_api-uploads_data
+[2025-08-26 03:00:02] ℹ️  Dossier local ./uploads absent ou vide — tentative via volume Docker: ordolite_api-uploads_data
+[2025-08-26 03:00:02] ⚠️  Volume ordolite_api-uploads_data introuvable. Skip uploads.
+[2025-08-26 03:00:02] ⚠️  Volume ordolite_api-uploads_data introuvable. Skip uploads.
+[2025-08-26 03:00:02] 🧹 Rotation: KEEP=7
+[2025-08-26 03:00:02] 🧹 Rotation: KEEP=7
