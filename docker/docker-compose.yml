@@ -1,0 +1,90 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ordolite_db
+    restart: always
+    environment:
+      POSTGRES_USER: jud
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ordolite
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jud -d ordolite"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - ordolite_net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ordolite_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5051:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ordolite_net
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ordolite_api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - ordolite_net
+
+  backup:
+    image: alpine:3.20
+    container_name: ordolite_backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backups_data:/backups          # ← volume défini
+      - uploads_data:/uploads:ro       # ← réutiliser le volume des uploads
+      - ./backup.sh:/backup.sh:ro    
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: jud
+      PGPASSWORD: admin
+      PGDATABASE: ordolite
+      KEEP: "7"
+      TZ: Europe/Paris
+    command: >
+      sh -c "
+        apk add --no-cache postgresql-client tzdata crond &&
+        echo '0 3 * * * /backup.sh >> /var/log/backup.log 2>&1' | crontab - &&
+        crond -f -L /dev/stdout
+      "
+    networks:
+      - ordolite_net
+
+volumes:
+  db_data:
+  uploads_data:
+  backups_data:
+
+networks:
+  ordolite_net:
+    driver: bridge

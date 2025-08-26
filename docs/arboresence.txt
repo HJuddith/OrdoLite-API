@@ -1,0 +1,36 @@
+.
+├─ docs/
+├─ src/
+│  ├─ app.js
+│  ├─ server.js
+|  ├─ security.js
+│  ├─ config/
+│  │  └─ database.js
+│  ├─ models/
+│  │  ├─ User.model.js
+│  │  ├─ Prescription.model.js
+│  │  ├─ Medication.model.js
+│  │  ├─ LinePrescription.model.js
+│  │  └─ Attachement.model.js
+│  │  └─ ResetPassword.model.js
+│  │  └─ RefreshToken.model.js
+│  │  └─ Notification.model.js
+│  ├─ routes/
+│  │  ├─ auth.routes.js
+│  │  └─ ordonnances.routes.js
+│  ├─ controllers/
+│  │  ├─ auth.controller.js
+│  │  └─ ordonnances.controller.js
+│  ├─ middleware/
+│  │  └─ auth.middleware.js
+│  ├─ validation/
+│  │  └─ ligneMedicament.schema.js
+│  └─ db.js
+├─ tests/
+│  └─ ordonnances.spec.js
+├─ docker-compose.yml
+├─ .env
+├─ .gitignore
+├─ package.json
+└─ README.md
+├─ tsconfig.json
