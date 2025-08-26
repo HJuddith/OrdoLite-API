@@ -20,16 +20,13 @@ API REST de gestion d'ordonnances médicales.
   - [Prérequis](#prérequis)
   - [Installation](#installation)
   - [Configuration](#configuration)
-  - [Commandes :](#commandes-)
-    - [Démarrage en développement (nodemon)](#démarrage-en-développement-nodemon)
-    - [Démarrage en production](#démarrage-en-production)
-    - [Lancer les tests Jest](#lancer-les-tests-jest)
   - [Structure du projet :](#structure-du-projet-)
   - [Migrations \& Seeds](#migrations--seeds)
   - [Réinitialiser la base en développement](#réinitialiser-la-base-en-développement)
   - [Réinitialiser la base en test](#réinitialiser-la-base-en-test)
     - [Lancer les tests](#lancer-les-tests)
   - [Lancer le serveur en développement](#lancer-le-serveur-en-développement)
+  - [Test push pour GitHub Actions](#test-push-pour-github-actions)
   - [API Docs](#api-docs)
 
 ---
@@ -80,22 +77,6 @@ DB_NAME=ordolite_dev
 
 JWT_ACCESS_SECRET=...
 JWT_REFRESH_SECRET=...
-
-## Commandes :
-
-### Démarrage en développement (nodemon)
-
-```bash
-npm run dev 
-```
-
-### Démarrage en production
-
-npm run prod
-
-### Lancer les tests Jest
-
-npm test
 
 ## Structure du projet :
 
@@ -150,6 +131,8 @@ npm test
 ```bash
 npm run dev
 ```
+
+## Test push pour GitHub Actions
 
 ## API Docs
 
