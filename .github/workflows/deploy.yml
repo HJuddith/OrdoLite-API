@@ -67,25 +67,25 @@ jobs:
   # CD : Déploiement sur VM via SSH
 
   cd:
-  name: Deploy to VM
-  runs-on: ubuntu-latest
-  needs: ci
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.2.1
-      with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_SSH_KEY }}
-        port: 22
-        script: |
-          cd ~/OrdoLite-API
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
+          script: |
+            cd ~/OrdoLite-API
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
 
   # Backup planifié (DB + uploads)
   backup:
