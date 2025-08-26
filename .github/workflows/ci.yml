@@ -6,26 +6,21 @@ on:
   pull_request:
     branches: [ "**" ]
   schedule:
-    # Backup chaque nuit à 03:00 Europe/Paris (~01:00 UTC en été, 02:00 UTC en hiver)
+    # Backup chaque nuit à 03:00 Europe/Paris (~01:00 UTC en été)
     - cron: "0 1 * * *"
 
 jobs:
-  # =========================
-  # CI : tests automatiques
-  # =========================
-  test:
+  ci:
     runs-on: ubuntu-latest
-    name: Test (Node 22 + Postgres)
-
     services:
       postgres:
-        image: postgres:16
-        ports:
-          - 5432:5432
+        image: postgres:15
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: app_test
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd="pg_isready -U postgres -d app_test"
           --health-interval=5s
@@ -35,7 +30,6 @@ jobs:
     env:
       NODE_ENV: test
       CI: true
-      # URL interne vers le service Postgres pour la suite de tests
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/app_test
 
     steps:
@@ -64,9 +58,6 @@ jobs:
       - name: Run tests
         run: npm test
 
-  # =========================
-  # Backup planifié (DB + uploads)
-  # =========================
   backup:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
@@ -74,10 +65,7 @@ jobs:
 
     env:
       TZ: Europe/Paris
-      # Secrets à définir dans: Settings > Secrets and variables > Actions
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}     # ex: postgresql://user:pass@host:5432/dbname
-      # Optionnel: archive aussi le dossier uploads depuis une URL (ex: serveur/VPS)
-      # UPLOADS_DOWNLOAD_URL: ${{ secrets.UPLOADS_DOWNLOAD_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - name: Checkout
@@ -95,13 +83,6 @@ jobs:
         run: |
           TS="$(date +%Y%m%d-%H%M%S)"
           pg_dump --dbname="$DATABASE_URL" -Fc -f "backups/db-$TS.dump"
-
-      # (Optionnel) si tu peux récupérer les uploads via HTTP/SSH/S3, ajoute une étape ici.
-      # - name: Download uploads archive
-      #   if: env.UPLOADS_DOWNLOAD_URL != ''
-      #   run: |
-      #     TS="$(date +%Y%m%d-%H%M%S)"
-      #     curl -fsSL "$UPLOADS_DOWNLOAD_URL" -o "backups/uploads-$TS.tgz"
 
       - name: Upload backup artifacts (kept 14 days)
         uses: actions/upload-artifact@v4
