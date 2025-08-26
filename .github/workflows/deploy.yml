@@ -13,9 +13,8 @@ on:
 
 jobs:
 
-  # =============================
   # CI : Tests automatiques
-  # =============================
+
   ci:
     name: Run Tests & Lint
     runs-on: ubuntu-latest
@@ -65,9 +64,8 @@ jobs:
       - name: Run tests
         run: npm test
 
-  # =============================
   # CD : Déploiement sur Render
-  # =============================
+
   cd_deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
@@ -75,14 +73,10 @@ jobs:
 
     steps:
       - name: Trigger Render Deploy
-        run: |
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Accept: application/json" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}   
 
-  # =============================
   # Backup : PostgreSQL (Neon)
-  # =============================
+
   nightly_backup:
     if: github.event_name == 'schedule'
     name: Nightly Backup
