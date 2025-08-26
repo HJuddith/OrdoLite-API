@@ -1,0 +1,52 @@
+name: CI/CD OrdoLite-API
+
+on:
+  push:
+    branches:
+      - main   # déploiement automatique uniquement sur la branche main
+
+jobs:
+  ci:
+    name: Run Tests & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lint
+        run: npm run lint --if-present
+
+      - name: Run Tests
+        run: npm test
+
+  cd:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: ci   # déploiement uniquement si les tests passent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
+          script: |
+            cd ~/ordolite
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
+            docker image prune -f

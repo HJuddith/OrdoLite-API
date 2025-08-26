@@ -24,7 +24,7 @@ API REST de gestion d'ordonnances médicales.
     - [Démarrage en développement (nodemon)](#démarrage-en-développement-nodemon)
     - [Démarrage en production](#démarrage-en-production)
     - [Lancer les tests Jest](#lancer-les-tests-jest)
-  - [Structure du projet ':'](#structure-du-projet-)
+  - [Structure du projet :](#structure-du-projet-)
   - [Migrations \& Seeds](#migrations--seeds)
   - [Réinitialiser la base en développement](#réinitialiser-la-base-en-développement)
   - [Réinitialiser la base en test](#réinitialiser-la-base-en-test)
@@ -97,7 +97,7 @@ npm run prod
 
 npm test
 
-## Structure du projet ':'
+## Structure du projet :
 
 ```plaintext
 
