@@ -26,9 +26,9 @@ API REST de gestion d'ordonnances médicales.
   - [Réinitialiser la base en test](#réinitialiser-la-base-en-test)
     - [Lancer les tests](#lancer-les-tests)
   - [Lancer le serveur en développement](#lancer-le-serveur-en-développement)
- 
-  - [Test push pour GitHub Actions](#test-push-pour-github-actions)
 
+  - [Test push pour GitHub Actions](#test-push-pour-github-actions)
+  
   - [API Docs](#api-docs)
 
 ---
