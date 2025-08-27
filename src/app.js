@@ -5,10 +5,7 @@ import { sequelize } from "./models/sequelize.js";
 import { initModels } from "./models/index.js";
 import apiRouter from "./routes/index.js";
 import { applySecurityMiddlewares } from "./security.js";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
-import path from "path";
-import { fileURLToPath } from "url";
+import { setupSwagger } from "./docs/swagger.js";
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 
@@ -31,49 +28,8 @@ app.use("/api/v1", apiRouter);
 // Route santé
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// Swagger config
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const swaggerOptions = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "OrdoLite API",
-      version: "1.0.0",
-      description: "Documentation OpenAPI pour OrdoLite",
-    },
-    servers: [{ url: "/", description: "Serveur principal" }],
-    components: {
-      schemas: {
-        RegisterRequest: {
-          type: "object",
-          required: ["first_name", "last_name", "email", "password"],
-          properties: {
-            first_name: { type: "string", example: "John" },
-            last_name: { type: "string", example: "Doe" },
-            email: {
-              type: "string",
-              format: "email",
-              example: "user@example.com",
-            },
-            password: {
-              type: "string",
-              format: "password",
-              example: "MySecurePassword123",
-            },
-          },
-        },
-      },
-    },
-  },
-  apis: [path.join(__dirname, "routes/*.js")],
-};
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
-// Swagger servi directement à la racine
-app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger
+setupSwagger(app); // Expose Swagger à /api-docs
 
 // Middleware 404
 app.use((req, res) => {
