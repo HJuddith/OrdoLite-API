@@ -23,6 +23,8 @@ applySecurityMiddlewares(app);
 initModels(sequelize);
 
 // Routes API
+app.get("/", (req, res) => res.redirect("/api-docs"));
+
 app.use("/api/v1", apiRouter);
 
 // Route santé
