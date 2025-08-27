@@ -7,12 +7,12 @@ import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false, // true si port 465
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_PORT === "465", // true si port 465
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 const ACCESS_TTL = process.env.JWT_ACCESS_TTL || '15m';
@@ -31,7 +31,7 @@ function signRefresh(user) {
     {
       typ: "refresh",
       sub: user.user_id,
-      jti: uuidv4()
+      jti: uuid()
     },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: "7d" }
@@ -63,52 +63,52 @@ export const AuthController = {
       });
 
       res.status(201).json({ user_id: user.user_id, email: user.email });
-    } catch (e) { next(e); }
-  },
+    } catch (e) {
+       next(e);
+      }
+   },
 
-login: async (req, res, next) => {
-  try {
-    const { email, password, device_info } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+  login: async (req, res, next) => {
+    try {
+      const { email, password, device_info } = req.body;
+      const user = await User.findOne({ where: { email } });
+      if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const ok = await argon2.verify(user.password, password);
-    if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+      const ok = await argon2.verify(user.password, password);
+      if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (!user.password) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      // Génération access token
+      const access = signAccess(user);
+
+      // Génération refresh token avec identifiant unique
+      const refresh = jwt.sign(
+          {
+              typ: 'refresh',
+              sub: user.user_id,
+              jti: crypto.randomUUID()
+          },
+          process.env.JWT_REFRESH_SECRET,
+          { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+      );
+
+      // Supprimer les anciens refresh tokens du même utilisateur
+      await RefreshToken.destroy({
+        where: { user_id: user.user_id }
+      });
+
+      // Stocker le refresh en DB
+      await RefreshToken.create({
+        user_id: user.user_id,
+        token: refresh,
+        expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000),
+        device_info,
+      });
+
+      res.json({ accessToken: access, refreshToken: refresh });
+    } catch (e) { 
+      next(e); 
     }
-
-    // Génération access token
-    const access = signAccess(user);
-
-    // Génération refresh token avec identifiant unique
-    const refresh = jwt.sign(
-        {
-            typ: 'refresh',
-            sub: user.user_id,
-            jti: crypto.randomUUID()
-        },
-        process.env.JWT_REFRESH_SECRET,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-    );
-
-    // Supprimer les anciens refresh tokens du même utilisateur
-    await RefreshToken.destroy({
-      where: { user_id: user.user_id }
-    });
-
-    // Stocker le refresh en DB
-    await RefreshToken.create({
-      user_id: user.user_id,
-      token: refresh,
-      expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000),
-      device_info,
-    });
-
-    res.json({ accessToken: access, refreshToken: refresh });
-  } catch (e) { next(e); }
-},
+  },
 
   refresh: async (req, res, next) => {
   try {
@@ -159,7 +159,9 @@ login: async (req, res, next) => {
     try {
       const user = await User.findByPk(req.user.userId, { attributes: { exclude: ['password'] } });
       res.json(user);
-    } catch (e) { next(e); }
+    } catch (e) { 
+      next(e); 
+    }
   },
 
   logout: async (req, res, next) => {
@@ -169,35 +171,55 @@ login: async (req, res, next) => {
       const { refresh_token } = req.body;
       if (refresh_token) await RefreshToken.destroy({ where: { token: refresh_token, user_id: req.user.userId } });
       res.status(204).end();
-    } catch (e) { next(e); }
+    } catch (e) {
+       next(e); 
+      }
   },
 
  requestReset: async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (user) {
-      const token = uuid();
-      await ResetPassword.create({
-        user_id: user.user_id,
-        token,
-        expires_at: new Date(Date.now() + 3600 * 1000),
-      });
+   try {
+     const { email } = req.body;
+     const user = await User.findOne({ where: { email } });
 
-      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+     if (user) {
+       // Vérifier la dernière demande
+       const lastRequest = await ResetPassword.findOne({
+         where: { user_id: user.user_id },
+         order: [["createdAt", "DESC"]],
+       });
 
-      // Envoi email
-      await transporter.sendMail({
-        from: '"OrdoLite Support" <support@ordolite.com>',
-        to: email,
-        subject: 'Réinitialisation de votre mot de passe',
-        text: `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetUrl}`,
-        html: `<p>Cliquez sur ce lien pour réinitialiser votre mot de passe :</p>
-               <a href="${resetUrl}">${resetUrl}</a>`
-      });
-    }
-    res.json({ message: 'If account exists, an email will be sent' });
-  } catch (e) { next(e); }
+       if (lastRequest && Date.now() - lastRequest.createdAt < 60 * 60 * 1000) {
+         return res.status(429).json({
+           message:
+             "Vous avez déjà demandé une réinitialisation dans la dernière heure.",
+         });
+       }
+
+       const token = uuid();
+       await ResetPassword.create({
+         user_id: user.user_id,
+         token,
+         expires_at: new Date(Date.now() + 3600 * 1000), // 1h
+       });
+
+       const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+       await transporter.sendMail({
+         from: '"OrdoLite Support" <support@ordolite.com>',
+         to: email,
+         subject: "Réinitialisation de votre mot de passe",
+         html: `<p>Cliquez sur ce lien pour réinitialiser votre mot de passe :</p>
+               <a href="${resetUrl}">${resetUrl}</a>`,
+       });
+     }
+
+     res.json({
+       message:
+         "Si le compte existe, un email de réinitialisation sera envoyé.",
+     });
+   } catch (e) {
+     next(e);
+   }
 },
 
   resetPassword: async (req, res, next) => {
@@ -221,6 +243,8 @@ login: async (req, res, next) => {
       await rp.save();
 
       res.json({ message: 'Password updated' });
-    } catch (e) { next(e); }
+    } catch (e) {
+       next(e); 
+      }
   },
 };

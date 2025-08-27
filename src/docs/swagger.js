@@ -182,7 +182,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: [], // Si tu veux aussi parser des JSDoc dans ton code
+  apis: [],
 };
 
 export default swaggerJSDoc(options);

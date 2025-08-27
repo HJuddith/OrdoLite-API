@@ -64,7 +64,6 @@ const swaggerOptions = {
             },
           },
         },
-        // Ajoute d’autres schemas ici si besoin
       },
     },
   },
