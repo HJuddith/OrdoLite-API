@@ -166,7 +166,6 @@ export const AuthController = {
 
   logout: async (req, res, next) => {
     try {
-      //
       // si le client envoie son refresh actuel, on le révoque ici :
       const { refresh_token } = req.body;
       if (refresh_token) await RefreshToken.destroy({ where: { token: refresh_token, user_id: req.user.userId } });
