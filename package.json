@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "sync:dev": "NODE_ENV=development node src/sync.js",
+    "sync:dev": "NODE_ENV=production node src/sync.js",
     "sync:test": "NODE_ENV=test node src/sync.js",
     "start": "node src/server.js",
     "test": "npm run sync:test && NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand --detectOpenHandles",

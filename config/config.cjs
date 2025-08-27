@@ -30,5 +30,6 @@ export default function () {
       dialect: 'postgres',
       logging: false,
     }
+    
   };
 }
