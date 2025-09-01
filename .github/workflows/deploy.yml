@@ -8,13 +8,14 @@ on:
     branches:
       - main
   schedule:
-    # Backup chaque nuit à 03:00 Europe/Paris (~01:00 UTC en été)
+    # Sauvegarde chaque nuit à 03:00 Europe/Paris.
     - cron: "0 1 * * *"
 
 jobs:
 
+  # -------------------------------
   # CI : Tests automatiques
-
+  # -------------------------------
   ci:
     name: Run Tests & Lint
     runs-on: ubuntu-latest
@@ -51,11 +52,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Wait for Postgres
+      - name: Install PostgreSQL client (pg_isready, psql)
         run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        shell: bash
+        run: |
+          set -euo pipefail
           for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U jud -d ordolite && break
-            echo "Waiting for Postgres…"; sleep 2
+            if pg_isready -h localhost -p 5432 -U jud -d ordolite; then
+              echo "Postgres is ready"
+              break
+            fi
+            echo "Waiting for Postgres… ($i/30)"
+            sleep 2
           done
 
       - name: Sync DB
@@ -64,19 +76,34 @@ jobs:
       - name: Run tests
         run: npm test
 
+  # -------------------------------
   # CD : Déploiement sur Render
-
+  # -------------------------------
   cd_deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
     needs: ci
 
     steps:
+      - name: Validate deploy hook presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "RENDER_DEPLOY_HOOK secret is missing." >&2
+            exit 1
+          fi
+
       - name: Trigger Render Deploy
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}   
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          echo "Render deploy triggered"
 
-  # Backup : PostgreSQL (Neon)
-
+  # -------------------------------
+  # Backups : PostgreSQL (Neon)
+  # -------------------------------
   nightly_backup:
     if: github.event_name == 'schedule'
     name: Nightly Backup
@@ -84,23 +111,62 @@ jobs:
 
     env:
       TZ: Europe/Paris
+      # URI Postgres complète (Neon), ex:
+      # postgresql://USER:PASSWORD@ep-xxx.aws.neon.tech/DB?sslmode=require
       DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pg_dump client
+      - name: Install PostgreSQL client (pg_dump, psql)
         run: |
           sudo apt-get update -y
           sudo apt-get install -y postgresql-client
 
+      - name: Check DATABASE_URL & force SSL if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL is empty. Did you set secrets.NEON_DATABASE_URL ?" >&2
+            exit 1
+          fi
+
+          # Ajouter sslmode=require si absent
+          if [[ "$DATABASE_URL" != *"sslmode="* ]]; then
+            if [[ "$DATABASE_URL" == *"?"* ]]; then
+              DATABASE_URL="${DATABASE_URL}&sslmode=require"
+            else
+              DATABASE_URL="${DATABASE_URL}?sslmode=require"
+            fi
+          fi
+
+          # Exposer la valeur (potentiellement modifiée) aux étapes suivantes
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "DATABASE_URL looks set"
+
       - name: Create backup directory
         run: mkdir -p backups
 
-      - name: Dump Neon PostgreSQL
+      - name: Test DB connectivity
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        shell: bash
         run: |
+          set -euo pipefail
+          # Échoue explicitement si la connexion est KO
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "select version();" > /dev/null
+          echo "Neon connection OK"
+
+      - name: Dump Neon PostgreSQL
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
           TS="$(date +%Y%m%d-%H%M%S)"
           pg_dump --dbname="$DATABASE_URL" -Fc -f "backups/db-$TS.dump"
+          echo "Created backups/db-$TS.dump"
 
       - name: Upload backup artifacts (14 jours)
         uses: actions/upload-artifact@v4
