@@ -51,7 +51,6 @@ API REST de gestion d'ordonnances médicales.
 - Express
 - npm >= 9.x
 - PostgreSQL >= 14
-- Socket.io
 - Docker (optionnel)
 
 ---
@@ -93,7 +92,7 @@ JWT_REFRESH_SECRET=...
 │  ├─ models/          # Modèles Sequelize
 │  ├─ routes/          # Routes API
 │  ├─ controllers/     # Contrôleurs
-│  ├─ middleware/      # Middlewares
+│  ├─ middlewares/      # Middlewares
 │  ├─ validation/      # Schémas Zod
 │  └─ db.js            # Connexion BD
 ├─ tests/              # Tests Jest/Supertest
